@@ -1,0 +1,164 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useAuth } from "@/context/AuthContext";
+import GoogleIcon from "@/components/icons/GoogleIcon";
+
+const SignUp = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState<"teacher" | "parent">("teacher");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const { signUp, signInWithGoogle } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      await signUp(email, password, role, fullName);
+      navigate("/dashboard"); // Redirect to dashboard after signup
+    } catch (error) {
+      console.error("Error signing up:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+      navigate("/dashboard"); // Redirect to dashboard after Google signup
+    } catch (error) {
+      console.error("Error signing in with Google:", error);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-mama-light p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
+        <Card className="border-2 border-mama-purple/20 shadow-xl">
+          <CardHeader className="space-y-1 text-center">
+            <CardTitle className="text-3xl font-bold tracking-tight">Create an account</CardTitle>
+            <CardDescription>
+              Enter your information to create your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  placeholder="Your full name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  className="border-mama-purple/20 focus:border-mama-purple"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="border-mama-purple/20 focus:border-mama-purple"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Create a strong password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="border-mama-purple/20 focus:border-mama-purple"
+                />
+              </div>
+              
+              <div className="space-y-3">
+                <Label>I am a:</Label>
+                <RadioGroup 
+                  value={role} 
+                  onValueChange={(value) => setRole(value as "teacher" | "parent")}
+                  className="flex flex-col space-y-1"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="teacher" id="teacher" />
+                    <Label htmlFor="teacher" className="cursor-pointer">Teacher</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="parent" id="parent" />
+                    <Label htmlFor="parent" className="cursor-pointer">Parent</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+              
+              <Button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="w-full bg-mama-purple hover:bg-mama-purple/90"
+              >
+                {isSubmitting ? "Creating account..." : "Create Account"}
+              </Button>
+            </form>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-mama-purple/20"></div>
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or continue with
+                </span>
+              </div>
+            </div>
+
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full border-mama-purple/20 hover:bg-mama-purple/10"
+              onClick={handleGoogleSignIn}
+            >
+              <GoogleIcon className="mr-2 h-4 w-4" />
+              Sign up with Google
+            </Button>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-2">
+            <div className="text-center text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link 
+                to="/sign-in" 
+                className="font-semibold text-mama-purple hover:underline"
+              >
+                Sign in
+              </Link>
+            </div>
+          </CardFooter>
+        </Card>
+      </motion.div>
+    </div>
+  );
+};
+
+export default SignUp;
