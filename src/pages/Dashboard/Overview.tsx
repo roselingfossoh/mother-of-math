@@ -28,7 +28,7 @@ const Overview = () => {
     try {
       const response = await sendMessage(message);
       setRecentActivity([message, ...recentActivity.slice(0, 4)]);
-      setLessonPlan(response); // Always set lessonPlan to the response
+      setLessonPlan('response'); // Always set lessonPlan to the response
       toast.success("Response generated successfully");
     } catch (error) {
       toast.error("Failed to generate response");

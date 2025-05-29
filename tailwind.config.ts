@@ -1,6 +1,7 @@
 import { Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
 import { shadcnPlugin } from './src/lib/shadcn-plugin';
+import { Fragment } from "react";
 
 // Define our custom animations
 const animations = {
@@ -114,9 +115,11 @@ const config = {
           foreground: "hsl(var(--card-foreground))",
         },
         mama: {
-          purple: "#9b87f5",
+          mustard: "#FFD95D",
           dark: "#1A1F2C",
-          light: "#F0F4F9",
+          eggshell: "#F0EADC",
+          button: "#2F6726FF",
+          fern:"#4CAF50",
         },
       },
       borderRadius: {
