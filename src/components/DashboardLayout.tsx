@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import DashboardSidebar from "./DashboardSidebar";
+import StudentSidebar from "./StudentSidebar";
 
 const exampleUser = {
   full_name: "Wobyeb Graphlain",
@@ -9,21 +11,28 @@ const exampleUser = {
 };
 
 const DashboardLayout = () => {
-  const [user, setUser] = useState(null);
-
+  const { profile, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  
   useEffect(() => {
-    // Get example user from localStorage or fallback
-    const stored = localStorage.getItem("exampleUser");
-    setUser(stored ? JSON.parse(stored) : exampleUser);
-  }, []);
+    if (!isAuthenticated) {
+      navigate("/sign-in");
+    }
+  }, [isAuthenticated, navigate]);
 
-  if (!user) {
+  if (!profile) {
     return null;
   }
 
+  const isStudent = profile.role === "student";
+
   return (
     <div className="flex min-h-screen bg-mama-light">
-      <DashboardSidebar profile={user} />
+      {isStudent ? (
+        <StudentSidebar profile={profile} />
+      ) : (
+        <DashboardSidebar profile={profile} />
+      )}
       <div className="flex-1 p-6">
         <Outlet />
       </div>

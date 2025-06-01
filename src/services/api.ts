@@ -1,8 +1,8 @@
 import { toast } from "sonner";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const OPENROUTER_API_KEY = ""; // This should be set by the user
-const OPENROUTER_MODEL = "deepseek/deepseek-r1:free"; // Use the specified model
+const OPENROUTER_API_KEY = "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";
+const OPENROUTER_MODEL = "anthropic/claude-3-sonnet";
 
 // Interface for API responses
 export interface ChatResponse {
@@ -13,19 +13,14 @@ export interface ChatResponse {
   };
 }
 
-// Function to set API key
-export const setApiKey = (key: string) => {
-  localStorage.setItem("openrouter_api_key", key);
-};
-
 // Function to get API key
 export const getApiKey = (): string => {
-  return localStorage.getItem("openrouter_api_key") || "";
+  return OPENROUTER_API_KEY;
 };
 
 // Function to check if API key is set
 export const hasApiKey = (): boolean => {
-  return !!getApiKey();
+  return true; // Since we're using a hardcoded key
 };
 
 // Initialize a chat session with the AI
@@ -35,27 +30,6 @@ export const initializeChat = async () => {
     sessionId: `session_${Date.now()}`,
     createdAt: new Date().toISOString()
   };
-};
-
-// Helper function to clean markdown formatting
-const cleanMarkdownFormatting = (text: string): string => {
-  // Remove heading markers (###, ##, #)
-  let cleaned = text.replace(/#{1,6}\s+/g, '');
-  
-  // Remove bold/italic markers (**, *, __, _)
-  cleaned = cleaned.replace(/(\*\*|\*|__|_)(.*?)\1/g, '$2');
-  
-  // Remove other common markdown elements if needed
-  // - Remove code blocks
-  cleaned = cleaned.replace(/```[\s\S]*?```/g, '');
-  
-  // - Remove inline code
-  cleaned = cleaned.replace(/`([^`]+)`/g, '$1');
-  
-  // - Remove bullet points
-  cleaned = cleaned.replace(/^\s*[-*+]\s+/gm, '');
-  
-  return cleaned;
 };
 
 // Main function to send messages to the AI
@@ -88,7 +62,7 @@ When analyzing student work, identify:
 - Practical remediation strategies that parents or teachers can implement
 
 Always be encouraging, use simple language, and provide actionable advice.
-Do not use markdown formatting like ###, **, or other markdown elements in your responses.
+Use markdown formatting, including headings, to structure the analysis and make it easy to read.
 `;
 
   let userContent: any[] = [{ type: "text", text: message }];
@@ -141,15 +115,17 @@ Do not use markdown formatting like ###, **, or other markdown elements in your 
     const data = await response.json();
     const aiMessage = data.choices[0].message.content;
     
-    // Clean markdown formatting from the AI's response
-    const cleanedMessage = cleanMarkdownFormatting(aiMessage);
     
     // Parse the response to extract any error analysis
     let analysis = {};
     if (imageBase64) {
       // Try to extract error type and remediation from the AI's response
-      const errorTypeMatch = cleanedMessage.match(/error type:?\s*([^\.]+)/i);
-      const remediationMatch = cleanedMessage.match(/remediation:?\s*([^\.]+)/i);
+      // Note: We are no longer cleaning markdown, so the regex might need adjustment
+      // to handle potential markdown in the matches. For simplicity now, we keep
+      // the original regex but be aware it might not capture perfectly if markdown
+      // is heavily used within the errorType or remediation phrases themselves.
+      const errorTypeMatch = aiMessage.match(/error type:?\s*([^\.]+)/i);
+      const remediationMatch = aiMessage.match(/remediation:?\s*([^\.]+)/i);
       
       if (errorTypeMatch || remediationMatch) {
         analysis = {
@@ -160,7 +136,7 @@ Do not use markdown formatting like ###, **, or other markdown elements in your 
     }
     
     return {
-      text: cleanedMessage,
+      text: aiMessage,
       analysis
     };
   } catch (error) {

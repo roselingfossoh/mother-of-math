@@ -7,12 +7,19 @@ import {
   BarChart, 
   Settings, 
   LogOut,
-  Users
+  Users,
+  ClipboardList,
+  GraduationCap,
+  BookCheck,
+  UserCircle,
+  UsersRound,
+  UserPlus
 } from "lucide-react";
 
 const DashboardSidebar = ({ profile }) => {
   const location = useLocation();
   const isTeacher = profile?.role === "teacher";
+  const isParent = profile?.role === "parent";
 
   const navItems = [
     {
@@ -22,26 +29,55 @@ const DashboardSidebar = ({ profile }) => {
     },
     ...(isTeacher ? [
       {
+        name: "Student Management",
+        href: "/dashboard/students",
+        icon: <Users className="h-5 w-5" />
+      },
+      {
+        name: "Student Accounts",
+        href: "/dashboard/student-accounts",
+        icon: <UserPlus className="h-5 w-5" />
+      },
+      {
+        name: "Assignments",
+        href: "/dashboard/assignments",
+        icon: <ClipboardList className="h-5 w-5" />
+      },
+      {
         name: "Lesson Plans",
         href: "/dashboard/lessons",
         icon: <BookOpen className="h-5 w-5" />
       },
       {
-        name: "Student Analysis",
-        href: "/dashboard/students",
-        icon: <Users className="h-5 w-5" />
+        name: "Upload Work",
+        href: "/dashboard/upload",
+        icon: <Upload className="h-5 w-5" />
       }
-    ] : []),
-    {
-      name: "Upload Work",
-      href: "/dashboard/upload",
-      icon: <Upload className="h-5 w-5" />
-    },
-    {
-      name: "Statistics",
-      href: "/dashboard/statistics",
-      icon: <BarChart className="h-5 w-5" />
-    },
+    ] : isParent ? [
+      {
+        name: "Parent Dashboard",
+        href: "/dashboard/parent",
+        icon: <UserCircle className="h-5 w-5" />
+      },
+      {
+        name: "Children",
+        href: "/dashboard/parent",
+        icon: <UsersRound className="h-5 w-5" />
+      }
+    ] : [
+      // Student only sees assignments and upload functionality
+      {
+        name: "My Assignments",
+        href: "/dashboard/my-assignments",
+        icon: <BookCheck className="h-5 w-5" />
+      },
+      {
+        name: "Upload Work",
+        href: "/dashboard/upload",
+        icon: <Upload className="h-5 w-5" />
+      }
+    ]),
+    // Settings is visible to everyone
     {
       name: "Settings",
       href: "/dashboard/settings",
@@ -50,7 +86,7 @@ const DashboardSidebar = ({ profile }) => {
   ];
 
   return (
-    <div className="w-64 border-r border-border bg-white flex flex-col h-screen ">
+    <div className="w-64 border-r border-border bg-white flex flex-col h-screen">
       <div className="p-4">
         <Link to="/" className="flex items-center space-x-2">
           <div className="w-8 h-8 rounded-full bg-mama-purple flex items-center justify-center text-white font-bold">
@@ -78,9 +114,9 @@ const DashboardSidebar = ({ profile }) => {
       </nav>
       <div className="p-4 border-t border-border">
         <div className="mb-4 px-3">
-          <div className="text-sm font-medium">Wobyeb Graphlain</div>
-          <div className="text-xs text-muted-foreground">wobyeb@ebsaeafrica.org</div>
-          <div className="text-xs text-mama-purple mt-1 capitalize">teacher</div>
+          <div className="text-sm font-medium">{profile?.full_name || "User"}</div>
+          <div className="text-xs text-muted-foreground">{profile?.email || "user@example.com"}</div>
+          <div className="text-xs text-mama-purple mt-1 capitalize">{profile?.role || "user"}</div>
         </div>
       </div>
     </div>

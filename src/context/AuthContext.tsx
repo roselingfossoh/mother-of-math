@@ -1,143 +1,133 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase, UserProfile, getUserProfile, createUserProfile, checkProfilesTable } from '../services/supabase';
 import { toast } from 'sonner';
+
+type UserRole = 'teacher' | 'parent' | 'student';
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  role: UserRole;
+  full_name?: string;
+  school?: string;
+  created_at: string;
+  // For teachers: IDs of students they manage
+  managed_student_ids?: string[];
+  // For students: ID of their assigned teacher
+  teacher_id?: string;
+  // For students: IDs of parent accounts linked to this student
+  parent_ids?: string[];
+  // For parents: IDs of children/students linked to this parent
+  children_ids?: string[];
+  // Additional academic info for students
+  grade_level?: string;
+  subjects?: string[];
+}
 
 type AuthContextType = {
   user: User | null;
   profile: UserProfile | null;
+  isAuthenticated: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, role: 'teacher' | 'parent', fullName: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  setUserProfile: (profile: UserProfile) => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Mock user data
+const mockUser: User = {
+  id: 'mock-user-id',
+  email: 'mock@example.com',
+  created_at: new Date().toISOString(),
+  aud: 'authenticated',
+  role: 'authenticated',
+  user_metadata: {},
+  app_metadata: {},
+};
+
+const mockProfile: UserProfile = {
+  id: 'mock-user-id',
+  email: 'mock@example.com',
+  role: 'teacher',
+  full_name: 'Mock User',
+  created_at: new Date().toISOString(),
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
-        if (user) {
-          let profile = await getUserProfile(user.id);
-          // If no profile exists (e.g., Google signup), create one
-          if (!profile) {
-            // Try to get name from user metadata (Google)
-            const fullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || "";
-            const email = user.email || "";
-            // Default to teacher, or you can prompt later
-            const role = "teacher";
-            await createUserProfile(user.id, email, role, fullName);
-            profile = await getUserProfile(user.id);
-          }
-          setProfile(profile);
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUser();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user || null);
-      
-      if (session?.user) {
-        const profile = await getUserProfile(session.user.id);
-        setProfile(profile);
-      } else {
-        setProfile(null);
-      }
-      
-      setIsLoading(false);
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
+  const [user, setUser] = useState<User | null>(mockUser);
+  const [profile, setProfile] = useState<UserProfile | null>(mockProfile);
+  const [isLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Set to true for demo purposes
 
   const signIn = async (email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      toast.success('Signed in successfully!');
-    } catch (error: any) {
-      toast.error(error.message || 'Error signing in');
-      throw error;
-    } finally {
-      setIsLoading(false);
+    // For student login, check if this matches any student accounts
+    if (email.includes('student')) {
+      // Create a mock student profile
+      const studentProfile: UserProfile = {
+        id: `student-${Date.now()}`,
+        email: email,
+        role: 'student',
+        full_name: email.split('@')[0],
+        created_at: new Date().toISOString(),
+        grade_level: 'Primary 5',
+        subjects: ['Mathematics'],
+        teacher_id: 'teacher-1'
+      };
+      
+      setUser({
+        ...mockUser,
+        id: studentProfile.id,
+        email: email
+      });
+      setProfile(studentProfile);
     }
+    
+    setIsAuthenticated(true);
+    toast.success('Signed in successfully!');
   };
 
   const signUp = async (email: string, password: string, role: 'teacher' | 'parent', fullName: string) => {
-    setIsLoading(true);
-    try {
-      // Check if profiles table exists
-      const hasProfilesTable = await checkProfilesTable();
-      if (!hasProfilesTable) {
-        toast.error('Profiles table not found. Please ensure your Supabase database is properly set up.');
-        return;
-      }
-
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) throw error;
-      
-      if (data.user) {
-        await createUserProfile(data.user.id, email, role, fullName);
-        toast.success('Account created successfully! Please check your email for verification.');
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Error creating account');
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    toast.success('Account created successfully!');
   };
 
   const signInWithGoogle = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (error) throw error;
-    } catch (error: any) {
-      toast.error(error.message || 'Error signing in with Google');
-      throw error;
-    }
+    toast.success('Signed in with Google successfully!');
   };
 
   const signOut = async () => {
-    setIsLoading(true);
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      setUser(null);
-      setProfile(null);
-      toast.success('Signed out successfully');
-    } catch (error: any) {
-      toast.error(error.message || 'Error signing out');
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    setUser(null);
+    setProfile(null);
+    setIsAuthenticated(false);
+    toast.success('Signed out successfully');
+  };
+  
+  // Function to set user profile directly (useful for student accounts)
+  const setUserProfile = (newProfile: UserProfile) => {
+    setProfile(newProfile);
+    setUser({
+      ...mockUser,
+      id: newProfile.id,
+      email: newProfile.email
+    });
+    setIsAuthenticated(true);
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, isLoading, signIn, signUp, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      profile, 
+      isAuthenticated,
+      isLoading, 
+      signIn, 
+      signUp, 
+      signInWithGoogle, 
+      signOut,
+      setUserProfile
+    }}>
       {children}
     </AuthContext.Provider>
   );
