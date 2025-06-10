@@ -116,7 +116,7 @@ const Overview = () => {
         className="relative z-10"
       >
         <h1 className="text-4xl md:text-5xl font-extrabold mb-2 bg-gradient-to-r from-mama-purple via-pink-500 to-[#e0218a] bg-clip-text text-transparent drop-shadow-lg">
-          Welcome back, Wobyeb!
+          Welcome back, eBASE africa!
         </h1>
         <p className="text-lg text-muted-foreground mb-6">
           {isTeacher 

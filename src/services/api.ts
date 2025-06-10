@@ -1,8 +1,9 @@
 import { toast } from "sonner";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const OPENROUTER_API_KEY = "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";
-const OPENROUTER_MODEL = "anthropic/claude-3-sonnet";
+
+// Use a more cost-effective model
+const OPENROUTER_MODEL = "google/gemini-2.5-flash-preview-05-20";
 
 // Interface for API responses
 export interface ChatResponse {
@@ -14,18 +15,17 @@ export interface ChatResponse {
 }
 
 // Function to get API key
-export const getApiKey = (): string => {
-  return OPENROUTER_API_KEY;
+export const getApiKey = (): string | undefined => {
+  return import.meta.env.VITE_OPENROUTER_API_KEY;
 };
 
 // Function to check if API key is set
 export const hasApiKey = (): boolean => {
-  return true; // Since we're using a hardcoded key
+  return !!import.meta.env.VITE_OPENROUTER_API_KEY;
 };
 
 // Initialize a chat session with the AI
 export const initializeChat = async () => {
-  // This is just a placeholder for now
   return {
     sessionId: `session_${Date.now()}`,
     createdAt: new Date().toISOString()
@@ -39,6 +39,8 @@ export const sendMessage = async (
 ): Promise<ChatResponse> => {
   const apiKey = getApiKey();
   if (!apiKey) {
+    console.error("OpenRouter API key not found. Make sure VITE_OPENROUTER_API_KEY is set in your .env file.");
+    toast.error("API Key is not configured. Please contact support.");
     throw new Error("API key not set");
   }
 
@@ -52,9 +54,9 @@ export const sendMessage = async (
 If asked for a lesson plan, structure your response with:
 - Learning objectives 
 - Materials needed
-- Lesson uestions
--high impactsteps (introduction, development, practice, conclusion)
-- Assessment q teaching strategies
+- Lesson steps (introduction, development, practice, conclusion)
+- Assessment questions
+- Teaching strategies
 
 When analyzing student work, identify:
 - Specific error types (e.g., incorrect counting, mixed grouping, etc.)
@@ -62,8 +64,7 @@ When analyzing student work, identify:
 - Practical remediation strategies that parents or teachers can implement
 
 Always be encouraging, use simple language, and provide actionable advice.
-Use markdown formatting, including headings, to structure the analysis and make it easy to read.
-`;
+Use markdown formatting, including headings, to structure the analysis and make it easy to read.`;
 
   let userContent: any[] = [{ type: "text", text: message }];
   
@@ -102,28 +103,34 @@ Use markdown formatting, including headings, to structure the analysis and make 
           }
         ],
         temperature: 0.7,
-        max_tokens: 1000
+        max_tokens: 1000,
+        stream: false
       })
     });
     
     if (!response.ok) {
       const errorData = await response.json();
       console.error("API Error:", errorData);
-      throw new Error(errorData.message || "Error communicating with AI");
+      
+      // Handle specific error cases
+      if (response.status === 402) {
+        toast.error("API quota exceeded. Please contact support.");
+        throw new Error("API quota exceeded");
+      } else if (response.status === 401) {
+        toast.error("Invalid API key. Please check your configuration.");
+        throw new Error("Invalid API key");
+      } else {
+        toast.error("Error communicating with AI. Please try again.");
+        throw new Error(errorData.message || "Error communicating with AI");
+      }
     }
     
     const data = await response.json();
     const aiMessage = data.choices[0].message.content;
     
-    
     // Parse the response to extract any error analysis
     let analysis = {};
     if (imageBase64) {
-      // Try to extract error type and remediation from the AI's response
-      // Note: We are no longer cleaning markdown, so the regex might need adjustment
-      // to handle potential markdown in the matches. For simplicity now, we keep
-      // the original regex but be aware it might not capture perfectly if markdown
-      // is heavily used within the errorType or remediation phrases themselves.
       const errorTypeMatch = aiMessage.match(/error type:?\s*([^\.]+)/i);
       const remediationMatch = aiMessage.match(/remediation:?\s*([^\.]+)/i);
       
