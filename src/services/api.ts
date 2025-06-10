@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { checkEnvironmentVariables } from "@/utils/envCheck";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -14,9 +15,29 @@ export interface ChatResponse {
   };
 }
 
-// Function to get API key
+// Function to get API key with validation
 export const getApiKey = (): string | undefined => {
-  return import.meta.env.VITE_OPENROUTER_API_KEY;
+  const key = import.meta.env.VITE_OPENROUTER_API_KEY;
+  
+  // Debug logging
+  console.log('Environment check:', {
+    hasKey: !!key,
+    keyLength: key?.length,
+    keyPrefix: key?.substring(0, 7),
+    allEnvVars: Object.keys(import.meta.env)
+  });
+
+  if (!key) {
+    console.error('API key is missing');
+    return undefined;
+  }
+
+  if (!key.startsWith('sk-or-v1-')) {
+    console.error('API key format is invalid - should start with sk-or-v1-');
+    return undefined;
+  }
+
+  return key;
 };
 
 // Function to check if API key is set
@@ -38,10 +59,16 @@ export const sendMessage = async (
   imageBase64?: string
 ): Promise<ChatResponse> => {
   const apiKey = getApiKey();
+  
   if (!apiKey) {
-    console.error("OpenRouter API key not found. Make sure VITE_OPENROUTER_API_KEY is set in your .env file.");
-    toast.error("API Key is not configured. Please contact support.");
-    throw new Error("API key not set");
+    const error = new Error("API key not configured properly");
+    console.error("API Configuration Error:", {
+      message: error.message,
+      envVars: Object.keys(import.meta.env),
+      hasKey: !!apiKey
+    });
+    toast.error("API Key is not configured. Please check your .env file.");
+    throw error;
   }
 
   let systemPrompt = `You are an AI assistant for "Mothers for Mathematics", a project helping teachers and parents in Cameroon with mathematics education. You specialize in:
@@ -110,19 +137,19 @@ Use markdown formatting, including headings, to structure the analysis and make 
     
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("API Error:", errorData);
+      console.error("API Error Details:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData,
+        headers: Object.fromEntries(response.headers.entries())
+      });
       
-      // Handle specific error cases
-      if (response.status === 402) {
-        toast.error("API quota exceeded. Please contact support.");
-        throw new Error("API quota exceeded");
-      } else if (response.status === 401) {
-        toast.error("Invalid API key. Please check your configuration.");
+      if (response.status === 401) {
+        toast.error("Invalid API key. Please check your OpenRouter API key.");
         throw new Error("Invalid API key");
-      } else {
-        toast.error("Error communicating with AI. Please try again.");
-        throw new Error(errorData.message || "Error communicating with AI");
       }
+      
+      throw new Error(errorData.message || "API request failed");
     }
     
     const data = await response.json();
@@ -147,8 +174,7 @@ Use markdown formatting, including headings, to structure the analysis and make 
       analysis
     };
   } catch (error) {
-    console.error("Error sending message:", error);
-    toast.error("Failed to get response from AI. Please try again.");
+    console.error("API Request Error:", error);
     throw error;
   }
 };
