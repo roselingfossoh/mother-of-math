@@ -6,25 +6,25 @@ export const shadcnPlugin = plugin(
   ({ addBase }) => {
     addBase({
       ":root": {
-        "--background": "0 0% 100%",
-        "--foreground": "222.2 84% 4.9%",
-        "--card": "0 0% 100%",
+        "--background": "44 44% 90%", //eggshell
+        "--foreground": "222.2 84% 4.9%", //dark gray
+        "--card": "44 44% 90%",
         "--card-foreground": "222.2 84% 4.9%",
-        "--popover": "0 0% 100%",
+        "--popover": "44 44% 90%",
         "--popover-foreground": "222.2 84% 4.9%",
-        "--primary": "221.2 83.2% 53.3%",
-        "--primary-foreground": "210 40% 98%",
-        "--secondary": "210 40% 96.1%",
+        "--primary": "78 27% 30%", //moss
+        "--primary-foreground": "44 44% 90%", //eggshell
+        "--secondary": "45 100% 68%", //mustard
         "--secondary-foreground": "222.2 47.4% 11.2%",
-        "--muted": "210 40% 96.1%",
+        "--muted": "44 44% 85%",
         "--muted-foreground": "215.4 16.3% 46.9%",
-        "--accent": "210 40% 96.1%",
-        "--accent-foreground": "222.2 47.4% 11.2%",
+        "--accent": "45 100% 68%", //mustard
+        "--accent-foreground": "44 44% 15%", //dark brown
         "--destructive": "0 84.2% 60.2%",
         "--destructive-foreground": "210 40% 98%",
-        "--border": "214.3 31.8% 91.4%",
-        "--input": "214.3 31.8% 91.4%",
-        "--ring": "221.2 83.2% 53.3%",
+        "--border": "78 27% 70%", //lighter moss
+        "--input": "78 27% 70%",
+        "--ring": "78 27% 70%", //moss again
         "--radius": "0.5rem",
       },
       ".dark": {
@@ -34,7 +34,7 @@ export const shadcnPlugin = plugin(
         "--card-foreground": "210 40% 98%",
         "--popover": "222.2 84% 4.9%",
         "--popover-foreground": "210 40% 98%",
-        "--primary": "217.2 91.2% 59.8%",
+        "--primary": "78 27% 30%",
         "--primary-foreground": "222.2 47.4% 11.2%",
         "--secondary": "217.2 32.6% 17.5%",
         "--secondary-foreground": "210 40% 98%",
